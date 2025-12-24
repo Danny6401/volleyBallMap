@@ -29,6 +29,13 @@ jobs:
 
       - name: Install
         run: npm ci
+      - name: Check env presence
+        run: |
+          node -e "console.log('key?', !!process.env.VITE_GOOGLE_MAPS_API_KEY)"
+          node -e "console.log('mapId?', !!process.env.VITE_GOOGLE_MAP_ID)"
+        env:
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_MAP_ID: ${{ secrets.VITE_GOOGLE_MAP_ID }}
 
       - name: Build
         run: npm run build
