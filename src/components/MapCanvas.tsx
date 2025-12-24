@@ -41,7 +41,7 @@ const MapCanvas = ({
   selectedTimeSlotId,
   onSelectTimeSlot,
 }: MapCanvasProps) => {
-  const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined;
+  const mapId = import.meta.env.VITE_GOOGLE_MAP_ID as string | undefined;
 
   const handleCameraChanged = useCallback(
     (ev: MapCameraChangedEvent) => {
