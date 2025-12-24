@@ -1,4 +1,4 @@
-import {
+﻿import {
   Box,
   Button,
   Chip,
@@ -11,6 +11,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 import type { ChangeEvent } from "react";
 import type { Court, SkillLevel } from "../../types";
 
@@ -41,6 +43,8 @@ const RegistrationPanel = ({
   onNicknamesChange,
   onSubmit,
 }: RegistrationPanelProps) => {
+  const dateValue = selectedDate ? dayjs(selectedDate) : null;
+
   const handleHeadcountChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Math.max(1, Math.min(12, Number(event.target.value) || 1));
     onHeadcountChange(next);
@@ -67,19 +71,25 @@ const RegistrationPanel = ({
       <Stack spacing={2} sx={{ flex: 1, overflow: "auto" }}>
         <Box>
           <Typography variant="h6" fontWeight={700}>
-            球友報名
+            報名資訊
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            程度依選擇的時段自動帶出
+            程度會依選擇的時段自動帶出
           </Typography>
         </Box>
 
-        <TextField
+        <DatePicker
           label="日期"
-          type="date"
-          value={selectedDate}
-          onChange={(e) => onDateChange(e.target.value)}
-          fullWidth
+          value={dateValue}
+          format="YYYY/MM/DD"
+          onChange={(value) =>
+            onDateChange(value ? value.format("YYYY-MM-DD") : "")
+          }
+          slotProps={{
+            textField: {
+              fullWidth: true,
+            },
+          }}
         />
 
         <FormControl fullWidth>
@@ -117,6 +127,7 @@ const RegistrationPanel = ({
           onChange={handleHeadcountChange}
           fullWidth
         />
+        <TextField label="手機號碼" fullWidth />
 
         <Box>
           <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -127,7 +138,7 @@ const RegistrationPanel = ({
               <TextField
                 key={`${idx}-${court.id}`}
                 value={name}
-                label={`成員 ${idx + 1}`}
+                label={`隊員 ${idx + 1}`}
                 placeholder="輸入暱稱"
                 onChange={(e) => handleNicknameChange(e.target.value, idx)}
                 fullWidth

@@ -86,7 +86,7 @@ const MapCanvas = ({
         style={{ width: "100%", height: "100%" }}
         defaultCenter={mapCenter}
         center={mapCenter}
-        defaultZoom={13}
+        defaultZoom={15}
         mapId={mapId}
         options={mapOptions}
         onCameraChanged={handleCameraChanged}
@@ -180,7 +180,7 @@ const MapCanvas = ({
                 variant="text"
                 size="small"
                 color="primary"
-                href={`https://www.google.com/maps/search/?api=1&query=${selectedCourt.lat},${selectedCourt.lng}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${selectedCourt.name}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

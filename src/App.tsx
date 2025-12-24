@@ -1,5 +1,5 @@
-// README: 建立 .env.local 並設定 Google Maps API Key
-// VITE_GOOGLE_MAPS_API_KEY=你的金鑰
+﻿// README: 設定 .env.local 指定 Google Maps API Key
+// VITE_GOOGLE_MAPS_API_KEY=你的API_KEY
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -9,6 +9,8 @@ import {
   ThemeProvider,
   createTheme,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import MapCanvas from "./components/MapCanvas";
 import NearbyCourtsPanel, {
@@ -30,45 +32,55 @@ const theme = createTheme({
   shape: { borderRadius: 14 },
 });
 
-const DEFAULT_HEADCOUNT = 4;
+const DEFAULT_HEADCOUNT = 1;
 
 const App = () => {
-  const initialCourt = courts[0];
-  const [selectedCourtId, setSelectedCourtId] = useState(initialCourt.id);
+  const [selectedCourtId, setSelectedCourtId] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
-  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(
-    initialCourt.timeSlots[0]?.id ?? ""
-  );
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState("");
   const [headcount, setHeadcount] = useState(DEFAULT_HEADCOUNT);
   const [nicknames, setNicknames] = useState<string[]>(
     Array.from({ length: DEFAULT_HEADCOUNT }, () => "")
   );
   const [mapCenter, setMapCenter] = useState<LatLng>({
-    lat: initialCourt.lat,
-    lng: initialCourt.lng,
+    lat: 25.0476,
+    lng: 121.51721,
   });
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [onlyVisible, setOnlyVisible] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(true);
 
-  const selectedCourt = useMemo(
-    () => courts.find((c) => c.id === selectedCourtId) ?? initialCourt,
-    [selectedCourtId]
-  );
+  // Use the user's current location as the initial map center when available.
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setMapCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {
+        // keep fallback center if permission denied or unavailable
+      }
+    );
+  }, []);
+
+  const selectedCourt = useMemo(() => {
+    if (!courts.length || !selectedCourtId) return null;
+    return courts.find((c) => c.id === selectedCourtId) ?? null;
+  }, [selectedCourtId]);
 
   const selectedTimeSlot = useMemo(
     () =>
-      selectedCourt.timeSlots.find((t) => t.id === selectedTimeSlotId) ??
-      selectedCourt.timeSlots[0] ??
+      selectedCourt?.timeSlots.find((t) => t.id === selectedTimeSlotId) ??
+      selectedCourt?.timeSlots[0] ??
       null,
     [selectedCourt, selectedTimeSlotId]
   );
 
   useEffect(() => {
-    if (!selectedCourt.timeSlots.length) return;
+    if (!selectedCourt || !selectedCourt.timeSlots.length) return;
     const hasSlot = selectedCourt.timeSlots.some(
       (slot) => slot.id === selectedTimeSlotId
     );
@@ -147,86 +159,94 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""}>
-        <Box
-          sx={{ position: "relative", minHeight: "100vh", bgcolor: "#0c111a" }}
-        >
-          <MapCanvas
-            courts={courts}
-            selectedCourtId={selectedCourtId}
-            selectedCourt={selectedCourt}
-            mapCenter={mapCenter}
-            onSelectCourt={handleSelectCourt}
-            onCameraChange={(center, bounds) => {
-              setMapCenter(center);
-              setMapBounds(bounds);
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""}>
+          <Box
+            sx={{
+              position: "relative",
+              minHeight: "100vh",
+              bgcolor: "#0c111a",
             }}
-            showInfo={infoOpen}
-            onCloseInfo={() => setInfoOpen(false)}
-            selectedTimeSlotId={selectedTimeSlot?.id ?? ""}
-            onSelectTimeSlot={setSelectedTimeSlotId}
-          />
-
-          <Box sx={overlayGrid}>
-            <Box
-              sx={{
-                pointerEvents: "auto",
-                maxHeight: "50vh",
-                overflow: "hidden",
-              }}
-            >
-              <RegistrationPanel
-                court={selectedCourt}
-                selectedDate={selectedDate}
-                selectedTimeSlotId={selectedTimeSlot?.id ?? ""}
-                selectedLevel={
-                  (selectedTimeSlot?.level ?? "mixed") as SkillLevel
-                }
-                headcount={headcount}
-                nicknames={nicknames}
-                onDateChange={setSelectedDate}
-                onTimeSlotChange={setSelectedTimeSlotId}
-                onHeadcountChange={setHeadcount}
-                onNicknamesChange={setNicknames}
-                onSubmit={handleSubmit}
-              />
-            </Box>
-
-            <Box
-              sx={{
-                pointerEvents: "auto",
-                maxHeight: "100vh",
-                overflow: "hidden",
-              }}
-            >
-              <NearbyCourtsPanel
-                items={topNearbyCourts}
-                selectedCourtId={selectedCourtId}
-                onlyVisible={onlyVisible}
-                totalCount={courts.length}
-                visibleCount={filteredCourts.length}
-                onToggleVisible={setOnlyVisible}
-                onSelectCourt={handleSelectCourt}
-              />
-            </Box>
-          </Box>
-
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={4000}
-            onClose={() => setSnackbarOpen(false)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
           >
-            <Alert
-              severity="success"
+            <MapCanvas
+              courts={courts}
+              selectedCourtId={selectedCourtId}
+              selectedCourt={selectedCourt}
+              mapCenter={mapCenter}
+              onSelectCourt={handleSelectCourt}
+              onCameraChange={(center, bounds) => {
+                setMapCenter(center);
+                setMapBounds(bounds);
+              }}
+              showInfo={infoOpen}
+              onCloseInfo={() => setInfoOpen(false)}
+              selectedTimeSlotId={selectedTimeSlot?.id ?? ""}
+              onSelectTimeSlot={setSelectedTimeSlotId}
+            />
+
+            <Box sx={overlayGrid}>
+              <Box
+                sx={{
+                  pointerEvents: "auto",
+                  maxHeight: "50vh",
+                  overflow: "hidden",
+                }}
+              >
+                {selectedCourt && (
+                  <RegistrationPanel
+                    court={selectedCourt}
+                    selectedDate={selectedDate}
+                    selectedTimeSlotId={selectedTimeSlot?.id ?? ""}
+                    selectedLevel={
+                      (selectedTimeSlot?.level ?? "mixed") as SkillLevel
+                    }
+                    headcount={headcount}
+                    nicknames={nicknames}
+                    onDateChange={setSelectedDate}
+                    onTimeSlotChange={setSelectedTimeSlotId}
+                    onHeadcountChange={setHeadcount}
+                    onNicknamesChange={setNicknames}
+                    onSubmit={handleSubmit}
+                  />
+                )}
+              </Box>
+
+              <Box
+                sx={{
+                  pointerEvents: "auto",
+                  maxHeight: "100vh",
+                  overflow: "hidden",
+                }}
+              >
+                <NearbyCourtsPanel
+                  items={topNearbyCourts}
+                  selectedCourtId={selectedCourtId}
+                  onlyVisible={onlyVisible}
+                  totalCount={courts.length}
+                  visibleCount={filteredCourts.length}
+                  onToggleVisible={setOnlyVisible}
+                  onSelectCourt={handleSelectCourt}
+                />
+              </Box>
+            </Box>
+
+            <Snackbar
+              open={snackbarOpen}
+              autoHideDuration={4000}
               onClose={() => setSnackbarOpen(false)}
-              // sx={{ width: "100%" }}
+              anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
-              報名已送出
-            </Alert>
-          </Snackbar>
-        </Box>
-      </APIProvider>
+              <Alert
+                severity="success"
+                onClose={() => setSnackbarOpen(false)}
+                // sx={{ width: "100%" }}
+              >
+                報名已送出
+              </Alert>
+            </Snackbar>
+          </Box>
+        </APIProvider>
+      </LocalizationProvider>
     </ThemeProvider>
   );
 };
