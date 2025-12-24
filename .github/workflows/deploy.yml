@@ -29,19 +29,12 @@ jobs:
 
       - name: Install
         run: npm ci
-      - name: Check env presence
-        run: |
-          node -e "console.log('key?', !!process.env.VITE_GOOGLE_MAPS_API_KEY)"
-          node -e "console.log('mapId?', !!process.env.VITE_GOOGLE_MAP_ID)"
-        env:
-          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
-          VITE_GOOGLE_MAP_ID: ${{ secrets.VITE_GOOGLE_MAP_ID }}
 
       - name: Build
         run: npm run build
         env:
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
-          VITE_GOOGLE_MAP_ID: ${{ secrets.VITE_GOOGLE_MAP_ID }}
+          VVITE_GOOGLE_MAPS_MAP_ID: ${{ secrets.VITE_GOOGLE_MAPS_MAP_ID }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
